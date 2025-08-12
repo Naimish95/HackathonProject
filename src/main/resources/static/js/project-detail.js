@@ -24,7 +24,20 @@ function addTask() {
         },
         body: JSON.stringify(taskData)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(text => {
+                console.log('Non-JSON response:', text);
+                return { id: Date.now(), title: taskData.title, description: taskData.description, priority: taskData.priority, status: taskData.status };
+            });
+        }
+    })
     .then(task => {
         addTaskToList(task);
         showNotification('Task added successfully! ✅', 'success');
@@ -43,11 +56,18 @@ function addTaskToList(task) {
         <input type="checkbox" class="w-5 h-5 text-purple-600 rounded" 
                ${task.status === 'completed' ? 'checked' : ''} 
                onchange="toggleTaskStatus(${task.id}, this.checked)">
-        <div class="flex-1">
+        <div class="flex-1 cursor-pointer" onclick="editTask(${task.id})">
             <h4 class="font-medium text-gray-800">${task.title}</h4>
             <p class="text-sm text-gray-500">${task.description || 'No description'}</p>
+            <div class="flex items-center space-x-4 text-xs text-gray-400 mt-1">
+                <span>Assigned: ${task.allocatedTo || 'Unassigned'}</span>
+                <span>Deadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
+            </div>
         </div>
         <span class="px-2 py-1 ${getPriorityColor(task.priority)} text-xs rounded-full">${task.priority}</span>
+        <button onclick="editTask(${task.id})" class="text-gray-400 hover:text-blue-600">
+            <i class="fas fa-edit"></i>
+        </button>
         <button onclick="deleteTask(${task.id})" class="text-gray-400 hover:text-red-600">
             <i class="fas fa-trash"></i>
         </button>
@@ -70,6 +90,116 @@ function toggleTaskStatus(taskId, completed) {
         console.error('Error updating task status:', error);
         showNotification('Error updating task', 'error');
     });
+}
+
+function editTask(taskId) {
+    // Get task data from DOM instead of API
+    const taskElement = document.querySelector(`[onclick*="editTask(${taskId})"]`).closest('.flex');
+    const title = taskElement.querySelector('h4').textContent;
+    const description = taskElement.querySelector('p').textContent;
+    
+    const task = {
+        id: taskId,
+        title: title,
+        description: description === 'No description' ? '' : description,
+        priority: 'medium',
+        allocatedTo: '',
+        deadline: null
+    };
+    
+    showEditTaskModal(task);
+}
+
+function showEditTaskModal(task) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">Edit Task</h3>
+            <form id="editTaskForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Task Name</label>
+                    <div class="relative">
+                        <input type="text" id="editTaskTitle" value="${task.title}" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <button type="button" onclick="startVoiceToText('editTaskTitle')" class="absolute right-2 top-2 text-gray-400 hover:text-purple-600">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Description</label>
+                    <div class="relative">
+                        <textarea id="editTaskDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">${task.description || ''}</textarea>
+                        <button type="button" onclick="startVoiceToText('editTaskDescription')" class="absolute right-2 top-2 text-gray-400 hover:text-purple-600">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Priority</label>
+                    <select id="editTaskPriority" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                        <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
+                        <option value="urgent" ${task.priority === 'urgent' ? 'selected' : ''}>Urgent</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="closeEditTaskModal()" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('editTaskForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateTask(task.id);
+    });
+}
+
+function updateTask(taskId) {
+    const taskData = {
+        title: document.getElementById('editTaskTitle').value,
+        description: document.getElementById('editTaskDescription').value,
+        priority: document.getElementById('editTaskPriority').value
+    };
+    
+    fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData)
+    })
+    .then(response => {
+        if (response.ok) {
+            showNotification('Task updated successfully! ✅', 'success');
+            closeEditTaskModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            console.error('Update failed with status:', response.status);
+            showNotification('Error updating task: ' + response.status, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating task:', error);
+        showNotification('Network error updating task', 'error');
+    });
+}
+
+function closeEditTaskModal() {
+    const modal = document.querySelector('.fixed.inset-0');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 function deleteTask(taskId) {
@@ -223,8 +353,9 @@ function stopRecording() {
 
 // Utility functions
 function getProjectId() {
-    // In a real app, this would come from URL params or page data
-    return 1;
+    // Extract project ID from URL path /projects/{id}
+    const pathParts = window.location.pathname.split('/');
+    return pathParts[pathParts.length - 1];
 }
 
 function getPriorityColor(priority) {

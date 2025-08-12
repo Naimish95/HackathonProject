@@ -27,29 +27,48 @@ public class TaskController {
     }
     
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        task.setCreatedAt(LocalDateTime.now());
-        Task savedTask = taskRepository.save(task);
-        return ResponseEntity.ok(savedTask);
+    public ResponseEntity<String> createTask(@RequestBody Task task) {
+        try {
+            task.setCreatedAt(LocalDateTime.now());
+            Task savedTask = taskRepository.save(task);
+            return ResponseEntity.ok("{\"status\":\"success\",\"id\":" + savedTask.getId() + "}");
+        } catch (Exception e) {
+            System.err.println("Error creating task: " + e.getMessage());
+            return ResponseEntity.status(500).body("{\"status\":\"error\"}");
+        }
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task taskDetails) {
+    public ResponseEntity<String> updateTask(@PathVariable Long id, @RequestBody Task taskDetails) {
+        try {
+            return taskRepository.findById(id)
+                .map(task -> {
+                    task.setTitle(taskDetails.getTitle());
+                    task.setDescription(taskDetails.getDescription());
+                    task.setPriority(taskDetails.getPriority());
+                    task.setStatus(taskDetails.getStatus());
+                    task.setEstimatedHours(taskDetails.getEstimatedHours());
+                    task.setDueDate(taskDetails.getDueDate());
+                    // Note: allocatedTo and deadline fields need to be added to Task entity
+                    
+                    if ("completed".equals(taskDetails.getStatus()) && task.getCompletedAt() == null) {
+                        task.setCompletedAt(LocalDateTime.now());
+                    }
+                    
+                    taskRepository.save(task);
+                    return ResponseEntity.ok("{\"status\":\"success\"}");
+                })
+                .orElse(ResponseEntity.status(404).body("{\"status\":\"not_found\"}"));
+        } catch (Exception e) {
+            System.err.println("Error updating task: " + e.getMessage());
+            return ResponseEntity.status(500).body("{\"status\":\"error\"}");
+        }
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTask(@PathVariable Long id) {
         return taskRepository.findById(id)
-            .map(task -> {
-                task.setTitle(taskDetails.getTitle());
-                task.setDescription(taskDetails.getDescription());
-                task.setPriority(taskDetails.getPriority());
-                task.setStatus(taskDetails.getStatus());
-                task.setEstimatedHours(taskDetails.getEstimatedHours());
-                task.setDueDate(taskDetails.getDueDate());
-                
-                if ("completed".equals(taskDetails.getStatus()) && task.getCompletedAt() == null) {
-                    task.setCompletedAt(LocalDateTime.now());
-                }
-                
-                return ResponseEntity.ok(taskRepository.save(task));
-            })
+            .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
     
