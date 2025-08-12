@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates - CreativeFlow</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b-4 border-gradient-to-r from-purple-400 to-pink-400">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        ✨ CreativeFlow
+                    </a>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="/" class="text-gray-600 hover:text-purple-600 transition-colors">Dashboard</a>
+                    <a href="/projects" class="text-gray-600 hover:text-purple-600 transition-colors">Projects</a>
+                    <a href="/templates" class="text-purple-600 font-medium">Templates</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Project Templates</h1>
+                <p class="text-gray-600">Drag and drop templates to kickstart your projects</p>
+            </div>
+            <button onclick="createTemplate()" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all">
+                <i class="fas fa-plus mr-2"></i>
+                Create Template
+            </button>
+        </div>
+
+        <!-- Template Categories -->
+        <div class="flex space-x-4 mb-8">
+            <button onclick="filterTemplates('all')" class="template-filter active bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                All Templates
+            </button>
+            <button onclick="filterTemplates('content_calendar')" class="template-filter bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                <i class="fas fa-calendar mr-2 text-pink-500"></i>
+                Content Calendar
+            </button>
+            <button onclick="filterTemplates('study_plan')" class="template-filter bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                <i class="fas fa-graduation-cap mr-2 text-blue-500"></i>
+                Study Plan
+            </button>
+            <button onclick="filterTemplates('project_board')" class="template-filter bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                <i class="fas fa-clipboard mr-2 text-green-500"></i>
+                Project Board
+            </button>
+            <button onclick="filterTemplates('freelance_tracker')" class="template-filter bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
+                <i class="fas fa-chart-line mr-2 text-purple-500"></i>
+                Freelance Tracker
+            </button>
+        </div>
+
+        <!-- Public Templates -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Popular Templates</h2>
+            <div id="publicTemplates" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Default templates when no data -->
+                <div class="template-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" 
+                     data-category="content_calendar" onclick="useTemplate('content_calendar')">
+                    <div class="h-32 bg-gradient-to-r from-pink-400 to-red-400 flex items-center justify-center">
+                        <i class="fas fa-video text-4xl text-white"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Content Calendar</h3>
+                        <p class="text-gray-600 text-sm mb-4">Plan your social media posts, videos, and content strategy</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full">Content</span>
+                            <span class="text-xs text-gray-500">Used 1.2k times</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="template-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" 
+                     data-category="study_plan" onclick="useTemplate('study_plan')">
+                    <div class="h-32 bg-gradient-to-r from-blue-400 to-indigo-400 flex items-center justify-center">
+                        <i class="fas fa-book text-4xl text-white"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Study Planner</h3>
+                        <p class="text-gray-600 text-sm mb-4">Organize assignments, exams, and study sessions</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Study</span>
+                            <span class="text-xs text-gray-500">Used 890 times</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="template-card bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer" 
+                     data-category="freelance_tracker" onclick="useTemplate('freelance_tracker')">
+                    <div class="h-32 bg-gradient-to-r from-green-400 to-teal-400 flex items-center justify-center">
+                        <i class="fas fa-briefcase text-4xl text-white"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Freelance Tracker</h3>
+                        <p class="text-gray-600 text-sm mb-4">Track clients, invoices, and project deadlines</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Freelance</span>
+                            <span class="text-xs text-gray-500">Used 654 times</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Templates -->
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Templates</h2>
+            <div id="userTemplates" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div th:if="${#lists.isEmpty(userTemplates)}" class="col-span-full text-center py-12">
+                    <i class="fas fa-layer-group text-4xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 mb-4">No custom templates yet</p>
+                    <button onclick="createTemplate()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                        Create Your First Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Creation Modal -->
+    <div id="templateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">Create Template</h3>
+            <form id="templateForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Template Name</label>
+                    <input type="text" id="templateName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Description</label>
+                    <textarea id="templateDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Category</label>
+                    <select id="templateCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="content_calendar">Content Calendar</option>
+                        <option value="study_plan">Study Plan</option>
+                        <option value="project_board">Project Board</option>
+                        <option value="freelance_tracker">Freelance Tracker</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="closeTemplateModal()" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                        Create Template
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/templates.js"></script>
+</body>
+</html>
