@@ -25,6 +25,9 @@ public class Project {
     @Column(name = "due_date")
     private LocalDateTime dueDate;
     
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -32,12 +35,10 @@ public class Project {
     @JoinColumn(name = "owner_id")
     private User owner;
     
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Task> tasks;
     
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
-    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Note> notes;
     
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
@@ -74,6 +75,9 @@ public class Project {
 
     public LocalDateTime getDueDate() { return dueDate; }
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
+
+    public LocalDateTime getDeadline() { return deadline; }
+    public void setDeadline(LocalDateTime deadline) { this.deadline = deadline; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

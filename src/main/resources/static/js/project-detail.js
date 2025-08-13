@@ -6,18 +6,28 @@ let audioChunks = [];
 
 // Task management
 function addTask() {
+    console.log('addTask function called');
     const taskTitle = prompt('Enter task title:');
-    if (!taskTitle) return;
+    if (taskTitle==null) return;
+    
+    const projectId = getProjectId();
+    console.log('Project ID:', projectId);
+    if (!projectId || projectId === 'undefined') {
+        showNotification('Invalid project ID', 'error');
+        return;
+    }
     
     const taskData = {
         title: taskTitle,
         description: '',
         priority: 'medium',
-        status: 'todo',
-        project: { id: getProjectId() }
+        status: 'todo'
     };
     
-    fetch('/api/tasks', {
+    console.log('Making API call to:', `/api/tasks?projectId=${projectId}`);
+    console.log('Task data:', taskData);
+    
+    fetch(`/api/tasks/${projectId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -28,19 +38,21 @@ function addTask() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json();
-        } else {
-            return response.text().then(text => {
-                console.log('Non-JSON response:', text);
-                return { id: Date.now(), title: taskData.title, description: taskData.description, priority: taskData.priority, status: taskData.status };
-            });
-        }
+        return response.text();
     })
-    .then(task => {
-        addTaskToList(task);
-        showNotification('Task added successfully! ✅', 'success');
+    .then(text => {
+        try {
+            const result = JSON.parse(text);
+            if (result.status === 'success') {
+                showNotification('Task added successfully! ✅', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(result.message || 'Task creation failed', 'error');
+            }
+        } catch (e) {
+            console.error('Error parsing response:', e, 'Response text:', text);
+            showNotification('Error adding task: ' + text, 'error');
+        }
     })
     .catch(error => {
         console.error('Error adding task:', error);
@@ -48,32 +60,7 @@ function addTask() {
     });
 }
 
-function addTaskToList(task) {
-    const tasksList = document.getElementById('tasksList');
-    const taskElement = document.createElement('div');
-    taskElement.className = 'flex items-center space-x-4 p-4 border border-gray-200 rounded-lg';
-    taskElement.innerHTML = `
-        <input type="checkbox" class="w-5 h-5 text-purple-600 rounded" 
-               ${task.status === 'completed' ? 'checked' : ''} 
-               onchange="toggleTaskStatus(${task.id}, this.checked)">
-        <div class="flex-1 cursor-pointer" onclick="editTask(${task.id})">
-            <h4 class="font-medium text-gray-800">${task.title}</h4>
-            <p class="text-sm text-gray-500">${task.description || 'No description'}</p>
-            <div class="flex items-center space-x-4 text-xs text-gray-400 mt-1">
-                <span>Assigned: ${task.allocatedTo || 'Unassigned'}</span>
-                <span>Deadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}</span>
-            </div>
-        </div>
-        <span class="px-2 py-1 ${getPriorityColor(task.priority)} text-xs rounded-full">${task.priority}</span>
-        <button onclick="editTask(${task.id})" class="text-gray-400 hover:text-blue-600">
-            <i class="fas fa-edit"></i>
-        </button>
-        <button onclick="deleteTask(${task.id})" class="text-gray-400 hover:text-red-600">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-    tasksList.appendChild(taskElement);
-}
+
 
 function toggleTaskStatus(taskId, completed) {
     const status = completed ? 'completed' : 'todo';
@@ -93,21 +80,21 @@ function toggleTaskStatus(taskId, completed) {
 }
 
 function editTask(taskId) {
-    // Get task data from DOM instead of API
-    const taskElement = document.querySelector(`[onclick*="editTask(${taskId})"]`).closest('.flex');
-    const title = taskElement.querySelector('h4').textContent;
-    const description = taskElement.querySelector('p').textContent;
-    
-    const task = {
-        id: taskId,
-        title: title,
-        description: description === 'No description' ? '' : description,
-        priority: 'medium',
-        allocatedTo: '',
-        deadline: null
-    };
-    
-    showEditTaskModal(task);
+    // Fetch task data from API
+    fetch(`/api/tasks/${taskId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Task not found: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(task => {
+            showEditTaskModal(task);
+        })
+        .catch(error => {
+            console.error('Error fetching task:', error);
+            showNotification('Error loading task details', 'error');
+        });
 }
 
 function showEditTaskModal(task) {

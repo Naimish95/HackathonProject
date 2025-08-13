@@ -26,15 +26,25 @@ public class TaskController {
         return taskRepository.findByProjectOrderByCreatedAtDesc(project);
     }
     
-    @PostMapping
-    public ResponseEntity<String> createTask(@RequestBody Task task) {
+    @PostMapping("/{projectId}")
+    public ResponseEntity<String> createTask(@PathVariable Long projectId, @RequestBody Task task) {
+        System.out.println("Creating task: " + task.getTitle() + " for project: " + projectId);
         try {
+            Project project = projectRepository.findById(projectId).orElse(null);
+            if (project == null) {
+                System.out.println("Project not found: " + projectId);
+                return ResponseEntity.status(400).body("{\"status\":\"error\",\"message\":\"Project not found\"}");
+            }
+            
+            task.setProject(project);
             task.setCreatedAt(LocalDateTime.now());
             Task savedTask = taskRepository.save(task);
+            System.out.println("Task saved with ID: " + savedTask.getId());
             return ResponseEntity.ok("{\"status\":\"success\",\"id\":" + savedTask.getId() + "}");
         } catch (Exception e) {
             System.err.println("Error creating task: " + e.getMessage());
-            return ResponseEntity.status(500).body("{\"status\":\"error\"}");
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}");
         }
     }
     
@@ -49,7 +59,7 @@ public class TaskController {
                     task.setStatus(taskDetails.getStatus());
                     task.setEstimatedHours(taskDetails.getEstimatedHours());
                     task.setDueDate(taskDetails.getDueDate());
-                    // Note: allocatedTo and deadline fields need to be added to Task entity
+                    task.setDeadline(taskDetails.getDeadline());
                     
                     if ("completed".equals(taskDetails.getStatus()) && task.getCompletedAt() == null) {
                         task.setCompletedAt(LocalDateTime.now());
@@ -58,7 +68,7 @@ public class TaskController {
                     taskRepository.save(task);
                     return ResponseEntity.ok("{\"status\":\"success\"}");
                 })
-                .orElse(ResponseEntity.status(404).body("{\"status\":\"not_found\"}"));
+                .orElse(ResponseEntity.status(404).body("{\"status\":\"not_found\",\"message\":\"Task with id " + id + " not found\"}"));
         } catch (Exception e) {
             System.err.println("Error updating task: " + e.getMessage());
             return ResponseEntity.status(500).body("{\"status\":\"error\"}");

@@ -24,6 +24,9 @@ public class Task {
     @Column(name = "due_date")
     private LocalDateTime dueDate;
     
+    @Column(name = "deadline")
+    private LocalDateTime deadline;
+    
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
     
@@ -62,6 +65,9 @@ public class Task {
 
     public LocalDateTime getDueDate() { return dueDate; }
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
+
+    public LocalDateTime getDeadline() { return deadline; }
+    public void setDeadline(LocalDateTime deadline) { this.deadline = deadline; }
 
     public LocalDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
