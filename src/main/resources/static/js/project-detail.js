@@ -2,7 +2,7 @@
 
 let isRecording = false;
 let mediaRecorder;
-let audioChunks = [];
+let audioChunks =[];
 
 // Task management
 function addTask() {
